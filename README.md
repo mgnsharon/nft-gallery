@@ -2,7 +2,13 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
-First, run the development server:
+First, create an `.env` file and set the `ALCHEMY_API_KEY` environment variable.
+
+```bash
+ALCHEMY_API_KEY=your_api_key
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -14,13 +20,25 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/gallery](http://localhost:3000/api/gallery). This endpoint can be edited in `app/api/gallery/route.ts`.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+The `app/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+
+## Known issues & TODOs
+
+The virtual scrolling needs a little more work specifically when changing directions.
+
+I chose to create my own Virtual Scroll for learning purposes.
+
+TODO: extract Data Management into a custom hook with context.
+
+TODO: update the Gallery & VirtualScroll to use the hook.
+
+TODO: center the gallery.
+
+TODO: hook up the token filter.
 
 ## Learn More
 

@@ -5,13 +5,15 @@ import { TokenFilter } from "./token-filter";
 
 export default function AppBar() {
   return (
-    <div className="flex h-16 w-screen items-center bg-slate-50 px-4 py-2 dark:bg-slate-900">
-      <Logo />
-      <LogoText />
+    <div className="bg-slate-50dark:bg-slate-900 flex h-16 w-screen items-center">
+      <div className="container mx-auto flex h-16 items-center py-2">
+        <Logo />
+        <LogoText />
 
-      <div className="flex-grow"></div>
-      <TokenFilter />
-      <ToggleDarkMode />
+        <div className="flex-grow"></div>
+        <TokenFilter />
+        <ToggleDarkMode />
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Nft } from "alchemy-sdk";
 import Image from "next/image";
 
-export interface NFTCardProps {
+export interface NFTCardProps extends React.HTMLAttributes<HTMLDivElement> {
   nft: Nft;
   className?: string;
 }

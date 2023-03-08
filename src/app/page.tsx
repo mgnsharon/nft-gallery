@@ -1,9 +1,9 @@
 import Gallery from "@/components/gallery";
 
-export default function Home() {
+export default function GalleryPage() {
   return (
-    <div>
-      <Gallery pageSize={10} />
+    <div className="h-full w-full">
+      <Gallery />
     </div>
   );
 }

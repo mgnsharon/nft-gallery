@@ -1,102 +1,155 @@
 "use client";
+import {
+  FixedSizeGrid,
+  FixedSizeGridProps,
+  GridOnItemsRenderedProps,
+  ListOnItemsRenderedProps,
+} from "react-window";
 import { Nft } from "alchemy-sdk";
-import { useCallback, useEffect, useState } from "react";
+import {
+  GetGalleryResponseData,
+  GetGalleryParams,
+} from "@/app/api/gallery/route";
+import { useEffect, useState, useCallback } from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
+import InfiniteLoader from "react-window-infinite-loader";
 import { NFTCard } from "./nft-card";
-import VirtualScroll from "./virtual-scroll";
-
-export interface GalleryProps {
-  pageSize?: number;
-}
+import SkeletonLoader from "./skeleton-loader";
 
 const CONTRACT_ADDRESS = "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d";
 
-export default function Gallery({ pageSize = 20 }: GalleryProps) {
-  const limit = pageSize;
-  const buffer = pageSize * 3;
-  const cache = pageSize * 2;
+export async function getData({
+  contractAddress,
+  offset = "0",
+  limit = 20,
+}: GetGalleryParams): Promise<GetGalleryResponseData> {
+  const resp = await fetch(
+    `/api/gallery?contractAddress=${contractAddress}&offset=${offset}&limit=${limit}`
+  );
+  const data = await resp.json();
+  return data;
+}
 
+export default function Gallery() {
   const [nfts, setNfts] = useState<Nft[]>([]);
   const [hasNextPage, setHasNextPage] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [isNextPageLoading, setIsNextPageLoading] = useState(false);
 
-  const fetchNfts = useCallback(
-    async ({ offset = 0, count = limit }) => {
-      setLoading(true);
-      const resp = await fetch(
-        `/api/gallery?contractAddress=${CONTRACT_ADDRESS}&limit=${count}&offset=${offset}`
-      );
-      const data = await resp.json();
-      setHasNextPage(data.hasMoreNfts);
-      return data.nfts;
-    },
-    [limit]
+  const isItemLoaded = useCallback(
+    (index: number) => !hasNextPage || index < nfts.length,
+    [hasNextPage, nfts]
   );
 
-  const prevCallback = useCallback(
-    async (newOffset: number) => {
+  const loadNextPage = useCallback(
+    async (startIndex: number, stopIndex: number) => {
+      if (!hasNextPage || isNextPageLoading) {
+        return;
+      }
       try {
-        if (newOffset < 0) {
-          return false;
-        }
-        const data = await fetchNfts({ offset: newOffset });
-        setNfts([...data, ...nfts.slice(0, cache)]);
-        setLoading(false);
-        return true;
-      } catch (error) {
-        console.log(error);
-        return false;
+        setIsNextPageLoading((_) => true);
+        const data = await getData({
+          contractAddress: CONTRACT_ADDRESS,
+          offset: `${stopIndex}`,
+          limit: 20,
+        });
+        setHasNextPage((_) => data.hasNextPage);
+        setNfts((prev) => [...prev, ...data.nfts]);
+      } catch (err) {
+        console.error(err);
       } finally {
-        setLoading(false);
+        setIsNextPageLoading((_) => false);
       }
     },
-    [fetchNfts, cache, nfts]
-  );
-
-  const nextCallback = useCallback(
-    async (newOffset: number) => {
-      try {
-        const data = await fetchNfts({ offset: newOffset });
-        setNfts([...nfts.slice(-cache), ...data]);
-        setLoading(false);
-        return true;
-      } catch (error) {
-        console.log(error);
-        return false;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchNfts, cache, nfts]
+    []
   );
 
   useEffect(() => {
-    fetchNfts({ offset: 0, count: cache })
-      .then((res) => {
-        setNfts(res);
+    setIsNextPageLoading((_) => true);
+    getData({ contractAddress: CONTRACT_ADDRESS })
+      .then((data) => {
+        setHasNextPage((_) => data.hasNextPage);
+        setNfts((_) => data.nfts);
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       })
-      .finally(() => setLoading(false));
-  }, [fetchNfts, cache]);
+      .finally(() => {
+        setIsNextPageLoading((_) => false);
+      });
+  }, []);
 
   return (
-    <VirtualScroll
-      limit={limit}
-      buffer={buffer}
-      cache={cache}
-      rowHeight={276}
-      itemWidth={276}
-      prevCallback={prevCallback}
-      nextCallback={nextCallback}
-    >
-      {nfts.map((nft) => (
-        <NFTCard
-          nft={nft}
-          key={nft.tokenId}
-          className="bg-slate-50 dark:bg-slate-900"
-        />
-      ))}
-    </VirtualScroll>
+    <div className="h-screen w-full">
+      <AutoSizer>
+        {({ height, width }) => {
+          const columnWidth = 276;
+          const rowHeight = 276;
+          const columnCount = Math.floor(width / columnWidth);
+          return (
+            <InfiniteLoader
+              minimumBatchSize={20}
+              isItemLoaded={isItemLoaded}
+              itemCount={hasNextPage ? nfts.length + 1 : nfts.length}
+              loadMoreItems={loadNextPage}
+              threshold={30}
+            >
+              {({ onItemsRendered, ref }) => {
+                const onGridItemsRendered = ({
+                  visibleRowStartIndex,
+                  visibleRowStopIndex,
+                  visibleColumnStopIndex,
+                  overscanColumnStopIndex,
+                  overscanRowStartIndex,
+                  overscanRowStopIndex,
+                }: GridOnItemsRenderedProps) => {
+                  const useOverScan = true;
+                  const endColumnIndex =
+                    (useOverScan
+                      ? overscanColumnStopIndex
+                      : visibleColumnStopIndex) + 1;
+                  const startRowIndex = useOverScan
+                    ? overscanRowStartIndex
+                    : visibleRowStartIndex;
+                  const endRowIndex = useOverScan
+                    ? overscanRowStopIndex
+                    : visibleRowStopIndex;
+                  const visibleStartIndex = startRowIndex * endColumnIndex;
+                  const visibleStopIndex = endRowIndex * endColumnIndex;
+                  onItemsRendered({
+                    visibleStartIndex,
+                    visibleStopIndex,
+                    overscanStartIndex: overscanRowStartIndex,
+                    overscanStopIndex: overscanRowStopIndex,
+                  });
+                };
+                return (
+                  <FixedSizeGrid
+                    width={width}
+                    height={height}
+                    columnCount={columnCount}
+                    columnWidth={columnWidth}
+                    rowCount={nfts.length}
+                    rowHeight={rowHeight}
+                    ref={ref}
+                    onItemsRendered={onGridItemsRendered}
+                  >
+                    {({ columnIndex, rowIndex, style }) => {
+                      const key: number = rowIndex * columnCount + columnIndex;
+                      return !isItemLoaded(key) ? (
+                        <SkeletonLoader />
+                      ) : (
+                        <div key={key} style={style}>
+                          <NFTCard nft={nfts[key]} />
+                        </div>
+                      );
+                    }}
+                  </FixedSizeGrid>
+                );
+              }}
+            </InfiniteLoader>
+          );
+        }}
+      </AutoSizer>
+    </div>
   );
 }

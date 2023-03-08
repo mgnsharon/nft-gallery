@@ -10,11 +10,12 @@ import {
   GetGalleryResponseData,
   GetGalleryParams,
 } from "@/app/api/gallery/route";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import InfiniteLoader from "react-window-infinite-loader";
 import { NFTCard } from "./nft-card";
 import SkeletonLoader from "./skeleton-loader";
+import useTokenSearch from "@/hooks/use-token-search";
 
 const CONTRACT_ADDRESS = "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d";
 
@@ -34,6 +35,9 @@ export default function Gallery() {
   const [nfts, setNfts] = useState<Nft[]>([]);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
+  const { tokenId } = useTokenSearch();
+  const listRef = useRef<FixedSizeGrid>(null);
+  let columnCount = 1;
 
   const isItemLoaded = useCallback(
     (index: number) => !hasNextPage || index < nfts.length,
@@ -78,13 +82,23 @@ export default function Gallery() {
       });
   }, []);
 
+  useEffect(() => {
+    if (tokenId && listRef && listRef.current) {
+      /* if (tokenId >= nfts.length) {
+        return;
+      } */
+      const rowIndex = Math.floor(tokenId / columnCount);
+      listRef.current.scrollToItem({ rowIndex, align: "start" });
+    }
+  }, [tokenId, columnCount]);
+
   return (
     <div className="h-screen w-full">
       <AutoSizer>
         {({ height, width }) => {
           const columnWidth = 276;
           const rowHeight = 276;
-          const columnCount = Math.floor(width / columnWidth);
+          columnCount = Math.floor(width / columnWidth);
           return (
             <InfiniteLoader
               minimumBatchSize={20}
@@ -130,7 +144,7 @@ export default function Gallery() {
                     columnWidth={columnWidth}
                     rowCount={nfts.length}
                     rowHeight={rowHeight}
-                    ref={ref}
+                    ref={listRef}
                     onItemsRendered={onGridItemsRendered}
                   >
                     {({ columnIndex, rowIndex, style }) => {

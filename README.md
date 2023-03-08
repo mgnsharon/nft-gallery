@@ -29,7 +29,6 @@ This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-opti
 ## Known issues & TODOs
 
 - Fix flickering while scrolling
-- Hook up the token filter.
 
 ## Learn More
 

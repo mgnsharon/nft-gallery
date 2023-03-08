@@ -1,6 +1,7 @@
 import AppBar from "@/components/appbar";
 import { Rubik } from "next/font/google";
 import "./globals.css";
+import { TokenSearchProvider } from "@/hooks/use-token-search";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -22,10 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${rubik.className} bg-white dark:bg-black`}>
-        <AppBar />
-        <div className="container mx-auto flex h-full w-full items-center">
-          {children}
-        </div>
+        <TokenSearchProvider>
+          <AppBar />
+          <div className="container mx-auto flex h-full w-full items-center">
+            {children}
+          </div>
+        </TokenSearchProvider>
       </body>
     </html>
   );

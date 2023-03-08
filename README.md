@@ -28,16 +28,7 @@ This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-opti
 
 ## Known issues & TODOs
 
-The virtual scrolling needs a little more work specifically when changing directions.
-
-I chose to create my own Virtual Scroll for learning purposes.
-
-TODO: extract Data Management into a custom hook with context.
-
-TODO: update the Gallery & VirtualScroll to use the hook.
-
-TODO: center the gallery.
-
+TODO: fix flickering while scrolling
 TODO: hook up the token filter.
 
 ## Learn More
